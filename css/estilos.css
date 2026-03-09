@@ -1,0 +1,28 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  background: #f0f4f8;
+}
+
+h1 {
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.subtitulo {
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.instruccion {
+  color: #718096;
+  font-size: 0.9rem;
+  background: #e2e8f0;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+}
