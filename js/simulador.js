@@ -1,7 +1,4 @@
-//   SIMULADOR DE VUELOS
-//   Primera pre-entrega JS
-
-const destinosDisponibles = ["Buenos aires", "Córdoba", "Mendoza", "Bariloche", "Miami"];
+// ---- DATOS ----
 
 const vuelos = [
   { destino: "buenos aires", duracion: "1h 10min", aerolinea: "Aerolíneas Argentinas" },
@@ -11,105 +8,202 @@ const vuelos = [
   { destino: "miami",        duracion: "9h 00min", aerolinea: "American Airlines"     },
 ];
 
-const fechasDisponibles = ["15/04/2025", "22/04/2025", "30/04/2025"];
 
-// Funciones
 
-function elegirFecha() {
-  let opcionFecha = prompt(
-    "Elegí una fecha para tu vuelo (Opción 1, 2 o 3):\n" +
-    "1 - " + fechasDisponibles[0] + "\n" +
-    "2 - " + fechasDisponibles[1] + "\n" +
-    "3 - " + fechasDisponibles[2]
-  );
+// ---- REFERENCIAS AL DOM ----
 
-  if (opcionFecha === "1" || opcionFecha === "2" || opcionFecha === "3") {
-    return fechasDisponibles[opcionFecha - 1];
-  } else {
-    alert("Opción no válida. Volvé al menú e intentá de nuevo.");
-    return null;
-  }
-}
+const inputNombre      = document.getElementById("nombre");
+const selectDestino    = document.getElementById("destino");
+const selectFecha      = document.getElementById("fecha");
+const btnBuscar        = document.getElementById("btn-buscar");
+const btnLimpiar       = document.getElementById("btn-limpiar");
+const btnReservar      = document.getElementById("btn-reservar");
+const btnBorrarTodo    = document.getElementById("btn-borrar-todo");
+const divMensaje       = document.getElementById("mensaje");
+const divResultado     = document.getElementById("resultado-vuelo");
+const divInfoVuelo     = document.getElementById("info-vuelo");
+const divListaReservas = document.getElementById("lista-reservas");
 
+// Guarda temporalmente el vuelo encontrado antes de confirmar
+let vueloActual = null;
+
+// Referencia al temporizador del mensaje de éxito (para cancelarlo si es necesario)
+let timerMensaje = null;
+
+
+
+// ---- FUNCIONES ----
+
+// Busca un vuelo en el array por destino
 function buscarVuelo(destino) {
-  for (let i = 0; i < vuelos.length; i++) {
-    if (vuelos[i].destino.toLowerCase() === destino.toLowerCase()) {
-      return vuelos[i];
-    }
+  return vuelos.find(v => v.destino === destino.toLowerCase()) || null;
+}
+
+// Muestra un mensaje en el DOM.
+// Si es de tipo "exito", se cierra automáticamente a los 4 segundos.
+function mostrarMensaje(texto, tipo) {
+  if (timerMensaje) clearTimeout(timerMensaje);
+
+  divMensaje.textContent = texto;
+  divMensaje.className = "mensaje " + tipo;
+
+  if (tipo === "exito") {
+    timerMensaje = setTimeout(ocultarMensaje, 4000);
   }
-  return null;
 }
 
-function mostrarDestinos() {
-  let lista = "Destinos disponibles:\n";
-  for (let i = 0; i < destinosDisponibles.length; i++) {
-    lista += (i + 1) + "- " + destinosDisponibles[i] + "\n";
+// Oculta el mensaje y limpia el temporizador
+function ocultarMensaje() {
+  if (timerMensaje) {
+    clearTimeout(timerMensaje);
+    timerMensaje = null;
   }
-  return lista;
+  divMensaje.className = "mensaje oculto";
+  divMensaje.textContent = "";
 }
 
-function simularVuelo(vuelo, pasajero, fecha) {
-  alert(
-    "✈️ RESUMEN DE TU VUELO\n" +
-    "─────────────────────────\n" +
-    "Pasajero:  " + pasajero + "\n" +
-    "Destino:   " + vuelo.destino + "\n" +
-    "Aerolínea: " + vuelo.aerolinea + "\n" +
-    "Duración:  " + vuelo.duracion + "\n" +
-    "Fecha:     " + fecha
-  );
+
+
+// ---- LOCALSTORAGE ----
+
+// Devuelve el array de reservas guardadas (o vacío si no hay nada)
+function obtenerReservas() {
+  const guardadas = localStorage.getItem("reservas");
+  return guardadas ? JSON.parse(guardadas) : [];
 }
 
-// Ejecuto el programa
+// Guarda el array actualizado en localStorage
+function guardarReservas(reservas) {
+  localStorage.setItem("reservas", JSON.stringify(reservas));
+}
 
-let pasajero = prompt("¡Bienvenido al Simulador de Vuelos!\n¿Cuál es tu nombre?");
+// Agrega una nueva reserva al localStorage
+function agregarReserva(reserva) {
+  const reservas = obtenerReservas();
+  reservas.push(reserva);
+  guardarReservas(reservas);
+}
 
-if (pasajero === null || pasajero.trim() === "") {
-  alert("No ingresaste tu nombre. El simulador se cerrará.");
-} else {
-  alert("Hola, " + pasajero + "! Vamos a simular tu vuelo.");
+// Elimina una reserva por su índice (pide confirmación antes)
+function eliminarReserva(indice) {
+  const confirmar = confirm("¿Seguro que querés eliminar esta reserva?");
+  if (!confirmar) return;
 
-  let opcion = prompt(
-    "¿Qué querés hacer?\n" +
-    "1 - Ver destinos disponibles\n" +
-    "2 - Buscar un vuelo\n" +
-    "X - Salir"
-  );
+  const reservas = obtenerReservas();
+  reservas.splice(indice, 1);
+  guardarReservas(reservas);
+  renderizarReservas();
+}
 
-  while (opcion !== null && opcion.toLowerCase() !== "x") {
 
-    if (opcion === "1") {
-      alert(mostrarDestinos());
 
-    } else if (opcion === "2") {
-      let destinoElegido = prompt("¿Escribe a qué destino querés volar?\n" + mostrarDestinos());
+// ---- RENDER ----
 
-      if (destinoElegido === null || destinoElegido.trim() === "") {
-        alert("No ingresaste un destino.");
-      } else {
-        let vuelo = buscarVuelo(destinoElegido.trim().toLowerCase());
+// Renderiza todas las reservas en el panel derecho
+function renderizarReservas() {
+  const reservas = obtenerReservas();
 
-        if (vuelo !== null) {
-          let fecha = elegirFecha();
-          if (fecha !== null) {
-            simularVuelo(vuelo, pasajero, fecha);
-          }
-        } else {
-          alert("No encontramos el destino '" + destinoElegido + "'.\nRevisá los destinos disponibles con la opción 1.");
-        }
-      }
-
-    } else {
-      alert("Opción no válida. Ingresa 1, 2 o X.");
-    }
-
-    opcion = prompt(
-      "¿Qué querés hacer?\n" +
-      "1 - Ver destinos disponibles\n" +
-      "2 - Buscar un vuelo\n" +
-      "X - Salir"
-    );
+  if (reservas.length === 0) {
+    divListaReservas.innerHTML = '<p class="vacio">Aún no tenés reservas guardadas.</p>';
+    return;
   }
 
-  alert("¡Gracias por usar el Simulador de Vuelos! Buen viaje, " + pasajero + " 🛫");
+  divListaReservas.innerHTML = "";
+
+  reservas.forEach((r, i) => {
+    const item = document.createElement("div");
+    item.className = "reserva-item";
+    item.innerHTML = `
+      <div class="reserva-info">
+        <p class="reserva-destino">✈ ${r.destino.toUpperCase()}</p>
+        <p><strong>${r.pasajero}</strong></p>
+        <p>${r.aerolinea} · ${r.duracion}</p>
+        <p>📅 ${r.fecha}</p>
+      </div>
+      <button class="btn-eliminar" title="Eliminar reserva">✕</button>
+    `;
+    item.querySelector(".btn-eliminar").addEventListener("click", () => eliminarReserva(i));
+    divListaReservas.appendChild(item);
+  });
 }
+
+// Muestra los detalles del vuelo encontrado en el panel
+function mostrarResultadoVuelo(vuelo, nombre, fecha) {
+  divInfoVuelo.innerHTML = `
+    <p>Pasajero: <span>${nombre}</span></p>
+    <p>Destino: <span>${vuelo.destino.charAt(0).toUpperCase() + vuelo.destino.slice(1)}</span></p>
+    <p>Aerolínea: <span>${vuelo.aerolinea}</span></p>
+    <p>Duración: <span>${vuelo.duracion}</span></p>
+    <p>Fecha: <span>${fecha}</span></p>
+  `;
+  divResultado.classList.remove("oculto");
+}
+
+
+
+// ---- EVENTOS ----
+
+// Botón BUSCAR
+btnBuscar.addEventListener("click", () => {
+  const nombre  = inputNombre.value.trim();
+  const destino = selectDestino.value;
+  const fecha   = selectFecha.value;
+
+  if (!nombre) {
+    mostrarMensaje("Por favor ingresá tu nombre.", "error");
+    return;
+  }
+  if (!destino) {
+    mostrarMensaje("Por favor seleccioná un destino.", "error");
+    return;
+  }
+  if (!fecha) {
+    mostrarMensaje("Por favor seleccioná una fecha.", "error");
+    return;
+  }
+
+  const vuelo = buscarVuelo(destino);
+  vueloActual = { ...vuelo, pasajero: nombre, fecha };
+  ocultarMensaje();
+  mostrarResultadoVuelo(vuelo, nombre, fecha);
+});
+
+// Botón CONFIRMAR RESERVA
+btnReservar.addEventListener("click", () => {
+  if (!vueloActual) return;
+
+  agregarReserva(vueloActual);
+  renderizarReservas();
+
+  mostrarMensaje("¡Reserva confirmada! Buen viaje 🛫", "exito");
+  divResultado.classList.add("oculto");
+
+  inputNombre.value = "";
+  selectDestino.value = "";
+  selectFecha.value = "";
+  vueloActual = null;
+});
+
+// Botón LIMPIAR
+btnLimpiar.addEventListener("click", () => {
+  inputNombre.value = "";
+  selectDestino.value = "";
+  selectFecha.value = "";
+  divResultado.classList.add("oculto");
+  ocultarMensaje();
+  vueloActual = null;
+});
+
+// Botón BORRAR TODO
+btnBorrarTodo.addEventListener("click", () => {
+  if (obtenerReservas().length === 0) return;
+  const confirmar = confirm("¿Seguro que querés borrar todas las reservas?");
+  if (confirmar) {
+    localStorage.removeItem("reservas");
+    renderizarReservas();
+  }
+});
+
+// ---- INICIO ----
+// Carga las reservas guardadas al abrir la página
+renderizarReservas();

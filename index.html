@@ -4,12 +4,81 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simulador de Vuelos</title>
+  <meta name="description" content="Segunda Pre-entrega js - Simulador de vuelos interactivo. Buscá destinos, elegí tu fecha y guardá tus reservas." />
+<meta name="author" content="Ulises Baroni" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/estilos.css" />
 </head>
 <body>
-  <h1>✈️ Simulador de Vuelos</h1>
-  <p class="subtitulo">Primera pre-entrega JS</p>
-  <p class="instruccion">Para operar el simulador, actualiza la página! (F5).</p>
+
+  <header>
+    <div class="header-inner">
+      <span class="logo">✈ SKYBOOK</span>
+      <p class="tagline">Segunda pre-entrega JS</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- PANEL IZQUIERDO: Formulario -->
+    <section class="panel panel-form">
+      <h2>Reservá tu vuelo</h2>
+
+      <div class="campo">
+        <label for="nombre">Nombre del pasajero</label>
+        <input type="text" id="nombre" placeholder="Ej: Juan Pérez" />
+      </div>
+
+      <div class="campo">
+        <label for="destino">Destino</label>
+        <select id="destino">
+          <option value="">-- Seleccioná un destino --</option>
+          <option value="buenos aires">Buenos Aires</option>
+          <option value="córdoba">Córdoba</option>
+          <option value="mendoza">Mendoza</option>
+          <option value="bariloche">Bariloche</option>
+          <option value="miami">Miami</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="fecha">Fecha de vuelo</label>
+        <select id="fecha">
+          <option value="">-- Seleccioná una fecha --</option>
+          <option value="15/04/2025">15/04/2025</option>
+          <option value="22/04/2025">22/04/2025</option>
+          <option value="30/04/2025">30/04/2025</option>
+        </select>
+      </div>
+
+      <div class="botones">
+        <button id="btn-buscar">Buscar vuelo</button>
+        <button id="btn-limpiar" class="secundario">Limpiar</button>
+      </div>
+
+      <div id="mensaje" class="mensaje oculto"></div>
+
+      <!-- Resultado del vuelo encontrado -->
+      <div id="resultado-vuelo" class="tarjeta-vuelo oculto">
+        <p class="tarjeta-titulo">VUELO ENCONTRADO</p>
+        <div id="info-vuelo"></div>
+        <button id="btn-reservar">Confirmar reserva ✓</button>
+      </div>
+    </section>
+
+    <!-- PANEL DERECHO: Historial -->
+    <section class="panel panel-historial">
+      <div class="historial-header">
+        <h2>Mis reservas</h2>
+        <button id="btn-borrar-todo" class="danger">Borrar todo</button>
+      </div>
+      <div id="lista-reservas">
+        <p class="vacio">Aún no tenés reservas guardadas.</p>
+      </div>
+    </section>
+
+  </main>
 
   <script src="js/simulador.js"></script>
 </body>
