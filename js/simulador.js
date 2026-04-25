@@ -486,7 +486,7 @@ btnReservar.addEventListener("click", () => {
   if (!vueloActual) return;
   agregarReserva(vueloActual);
   renderizarReservas();
-  mostrarMensaje("¡Reserva confirmada! Buen viaje", "exito");
+  mostrarMensaje("¡Reserva confirmada! Buen viaje 🛫", "exito");
   limpiarFormulario(true);
 });
 
@@ -502,5 +502,18 @@ btnBorrarTodo.addEventListener("click", () => {
 
 // ---- INICIO ----
 btnMenos.disabled = true;
-setTipoViaje("ida-vuelta"); // inicializa el estado correcto del toggle y habilita regreso
+setTipoViaje("ida-vuelta");
 renderizarReservas();
+
+// Pantalla de inicio
+const pantallaInicio = document.getElementById("pantalla-inicio");
+const app            = document.getElementById("app");
+
+document.getElementById("btn-iniciar").addEventListener("click", () => {
+  pantallaInicio.classList.add("saliendo");
+  app.classList.remove("oculto");
+  // Elimina del DOM al terminar la transición
+  pantallaInicio.addEventListener("transitionend", () => {
+    pantallaInicio.remove();
+  }, { once: true });
+});

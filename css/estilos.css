@@ -594,3 +594,106 @@ button.danger:hover { border-color: var(--danger); color: var(--danger); }
   letter-spacing: 0;
 }
 .btn-eliminar:hover { color: var(--danger); }
+
+/* =====================
+   PANTALLA DE INICIO
+   ===================== */
+#pantalla-inicio {
+  position: fixed;
+  inset: 0;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: opacity 1.5s ease, visibility 1.5s ease;
+}
+
+#pantalla-inicio.saliendo {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.inicio-contenido {
+  text-align: center;
+  max-width: 420px;
+  padding: 2rem;
+}
+
+.inicio-pre {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.inicio-logo {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  letter-spacing: 6px;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.inicio-desc {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.inicio-pasos {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+.inicio-pasos li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.inicio-pasos li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+#btn-iniciar {
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  letter-spacing: 2px;
+  font-size: 1.1rem;
+  padding: 0.8rem 2.5rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.25);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+#btn-iniciar:hover {
+  background: #1d4ed8;
+  box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+  transform: translateY(-1px);
+}
+
+/* Ocultar main hasta que se inicie */
+#app.oculto { display: none; }
