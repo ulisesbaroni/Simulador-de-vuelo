@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simulador de Vuelos</title>
-  <meta name="description" content="Segunda Pre-entrega js - Simulador de vuelos interactivo. Buscá destinos, elegí tu fecha y guardá tus reservas." />
-<meta name="author" content="Ulises Baroni" />
+  <meta name="description" content="Simulador de vuelos interactivo. Buscá destinos, elegí tu fecha y guardá tus reservas." />
+  <meta name="author" content="Ulises" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/estilos.css" />
@@ -15,7 +15,7 @@
   <header>
     <div class="header-inner">
       <span class="logo">✈ SKYBOOK</span>
-      <p class="tagline">Segunda pre-entrega JS</p>
+      <p class="tagline">Entrega final JS</p>
     </div>
   </header>
 
@@ -31,14 +31,46 @@
       </div>
 
       <div class="campo">
+        <label for="origen">Origen</label>
+        <select id="origen">
+          <option value="">-- Seleccioná un origen --</option>
+          <optgroup label="🇦🇷 Argentina">
+            <option value="EZE">Buenos Aires — Ezeiza (EZE)</option>
+            <option value="AEP">Buenos Aires — Aeroparque (AEP)</option>
+            <option value="COR">Córdoba — Ambrosio Taravella (COR)</option>
+            <option value="MDZ">Mendoza — El Plumerillo (MDZ)</option>
+            <option value="BRC">Bariloche — Teniente Candelaria (BRC)</option>
+            <option value="ROS">Rosario — Islas Malvinas (ROS)</option>
+            <option value="SLA">Salta — Martín Miguel de Güemes (SLA)</option>
+          </optgroup>
+          <optgroup label="🌎 Internacional">
+            <option value="GRU">São Paulo — Guarulhos (GRU)</option>
+            <option value="SCL">Santiago de Chile — Arturo Merino (SCL)</option>
+            <option value="MIA">Miami — Miami Intl. (MIA)</option>
+            <option value="MAD">Madrid — Adolfo Suárez Barajas (MAD)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="campo">
         <label for="destino">Destino</label>
         <select id="destino">
           <option value="">-- Seleccioná un destino --</option>
-          <option value="buenos aires">Buenos Aires</option>
-          <option value="córdoba">Córdoba</option>
-          <option value="mendoza">Mendoza</option>
-          <option value="bariloche">Bariloche</option>
-          <option value="miami">Miami</option>
+          <optgroup label="🇦🇷 Argentina">
+            <option value="EZE">Buenos Aires — Ezeiza (EZE)</option>
+            <option value="AEP">Buenos Aires — Aeroparque (AEP)</option>
+            <option value="COR">Córdoba — Ambrosio Taravella (COR)</option>
+            <option value="MDZ">Mendoza — El Plumerillo (MDZ)</option>
+            <option value="BRC">Bariloche — Teniente Candelaria (BRC)</option>
+            <option value="ROS">Rosario — Islas Malvinas (ROS)</option>
+            <option value="SLA">Salta — Martín Miguel de Güemes (SLA)</option>
+          </optgroup>
+          <optgroup label="🌎 Internacional">
+            <option value="GRU">São Paulo — Guarulhos (GRU)</option>
+            <option value="SCL">Santiago de Chile — Arturo Merino (SCL)</option>
+            <option value="MIA">Miami — Miami Intl. (MIA)</option>
+            <option value="MAD">Madrid — Adolfo Suárez Barajas (MAD)</option>
+          </optgroup>
         </select>
       </div>
 

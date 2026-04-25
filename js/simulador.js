@@ -1,18 +1,56 @@
-// ---- DATOS ----
+// =============================================
+//   SIMULADOR DE VUELOS
+//   Entrega final JS
+// =============================================
 
-const vuelos = [
-  { destino: "buenos aires", duracion: "1h 10min", aerolinea: "Aerolíneas Argentinas" },
-  { destino: "córdoba",      duracion: "1h 20min", aerolinea: "Flybondi"              },
-  { destino: "mendoza",      duracion: "1h 45min", aerolinea: "JetSmart"              },
-  { destino: "bariloche",    duracion: "2h 30min", aerolinea: "LATAM"                 },
-  { destino: "miami",        duracion: "9h 00min", aerolinea: "American Airlines"     },
+// ---- DATOS ----
+// Cada ruta tiene: origen, destino (códigos IATA), aerolínea y duración.
+// Una misma ruta aplica en ambas direcciones (ida y vuelta).
+
+const rutas = [
+  // Domésticas desde/hacia Aeroparque (AEP)
+  { origen: "AEP", destino: "COR", aerolinea: "Aerolíneas Argentinas", duracion: "1h 20min" },
+  { origen: "AEP", destino: "MDZ", aerolinea: "Flybondi",              duracion: "1h 45min" },
+  { origen: "AEP", destino: "BRC", aerolinea: "LATAM",                 duracion: "2h 30min" },
+  { origen: "AEP", destino: "ROS", aerolinea: "Aerolíneas Argentinas", duracion: "0h 55min" },
+  { origen: "AEP", destino: "SLA", aerolinea: "JetSmart",              duracion: "2h 10min" },
+
+  // Domésticas desde/hacia Ezeiza (EZE)
+  { origen: "EZE", destino: "COR", aerolinea: "JetSmart",              duracion: "1h 30min" },
+  { origen: "EZE", destino: "MDZ", aerolinea: "Aerolíneas Argentinas", duracion: "1h 50min" },
+  { origen: "EZE", destino: "BRC", aerolinea: "Aerolíneas Argentinas", duracion: "2h 40min" },
+
+  // Internacionales desde Ezeiza (EZE)
+  { origen: "EZE", destino: "GRU", aerolinea: "LATAM",                 duracion: "3h 00min" },
+  { origen: "EZE", destino: "SCL", aerolinea: "Sky Airline",           duracion: "2h 10min" },
+  { origen: "EZE", destino: "MIA", aerolinea: "American Airlines",     duracion: "9h 00min" },
+  { origen: "EZE", destino: "MAD", aerolinea: "Iberia",                duracion: "12h 30min" },
+
+  // Internacionales desde otros orígenes
+  { origen: "SCL", destino: "MIA", aerolinea: "LATAM",                 duracion: "8h 30min" },
+  { origen: "GRU", destino: "MAD", aerolinea: "Iberia",                duracion: "10h 45min" },
+  { origen: "MIA", destino: "MAD", aerolinea: "Iberia",                duracion: "8h 00min" },
 ];
 
-
+// Nombres completos de aeropuertos por código IATA
+const aeropuertos = {
+  EZE: "Buenos Aires — Ezeiza (EZE)",
+  AEP: "Buenos Aires — Aeroparque (AEP)",
+  COR: "Córdoba — Ambrosio Taravella (COR)",
+  MDZ: "Mendoza — El Plumerillo (MDZ)",
+  BRC: "Bariloche — Teniente Candelaria (BRC)",
+  ROS: "Rosario — Islas Malvinas (ROS)",
+  SLA: "Salta — Martín Miguel de Güemes (SLA)",
+  GRU: "São Paulo — Guarulhos (GRU)",
+  SCL: "Santiago de Chile — Arturo Merino (SCL)",
+  MIA: "Miami — Miami Intl. (MIA)",
+  MAD: "Madrid — Adolfo Suárez Barajas (MAD)",
+};
 
 // ---- REFERENCIAS AL DOM ----
 
 const inputNombre      = document.getElementById("nombre");
+const selectOrigen     = document.getElementById("origen");
 const selectDestino    = document.getElementById("destino");
 const selectFecha      = document.getElementById("fecha");
 const btnBuscar        = document.getElementById("btn-buscar");
@@ -27,16 +65,17 @@ const divListaReservas = document.getElementById("lista-reservas");
 // Guarda temporalmente el vuelo encontrado antes de confirmar
 let vueloActual = null;
 
-// Referencia al temporizador del mensaje de éxito (para cancelarlo si es necesario)
+// Referencia al temporizador del mensaje de éxito
 let timerMensaje = null;
-
-
 
 // ---- FUNCIONES ----
 
-// Busca un vuelo en el array por destino
-function buscarVuelo(destino) {
-  return vuelos.find(v => v.destino === destino.toLowerCase()) || null;
+// Busca una ruta por origen y destino (también verifica la inversa)
+function buscarRuta(origen, destino) {
+  return rutas.find(
+    r => (r.origen === origen && r.destino === destino) ||
+         (r.origen === destino && r.destino === origen)
+  ) || null;
 }
 
 // Muestra un mensaje en el DOM.
@@ -62,22 +101,17 @@ function ocultarMensaje() {
   divMensaje.textContent = "";
 }
 
-
-
 // ---- LOCALSTORAGE ----
 
-// Devuelve el array de reservas guardadas (o vacío si no hay nada)
 function obtenerReservas() {
   const guardadas = localStorage.getItem("reservas");
   return guardadas ? JSON.parse(guardadas) : [];
 }
 
-// Guarda el array actualizado en localStorage
 function guardarReservas(reservas) {
   localStorage.setItem("reservas", JSON.stringify(reservas));
 }
 
-// Agrega una nueva reserva al localStorage
 function agregarReserva(reserva) {
   const reservas = obtenerReservas();
   reservas.push(reserva);
@@ -95,11 +129,8 @@ function eliminarReserva(indice) {
   renderizarReservas();
 }
 
-
-
 // ---- RENDER ----
 
-// Renderiza todas las reservas en el panel derecho
 function renderizarReservas() {
   const reservas = obtenerReservas();
 
@@ -115,7 +146,7 @@ function renderizarReservas() {
     item.className = "reserva-item";
     item.innerHTML = `
       <div class="reserva-info">
-        <p class="reserva-destino">✈ ${r.destino.toUpperCase()}</p>
+        <p class="reserva-ruta">${r.origen} → ${r.destino}</p>
         <p><strong>${r.pasajero}</strong></p>
         <p>${r.aerolinea} · ${r.duracion}</p>
         <p>📅 ${r.fecha}</p>
@@ -127,25 +158,24 @@ function renderizarReservas() {
   });
 }
 
-// Muestra los detalles del vuelo encontrado en el panel
-function mostrarResultadoVuelo(vuelo, nombre, fecha) {
+function mostrarResultadoVuelo(ruta, nombre, fecha) {
   divInfoVuelo.innerHTML = `
-    <p>Pasajero: <span>${nombre}</span></p>
-    <p>Destino: <span>${vuelo.destino.charAt(0).toUpperCase() + vuelo.destino.slice(1)}</span></p>
-    <p>Aerolínea: <span>${vuelo.aerolinea}</span></p>
-    <p>Duración: <span>${vuelo.duracion}</span></p>
-    <p>Fecha: <span>${fecha}</span></p>
+    <p>Pasajero:  <span>${nombre}</span></p>
+    <p>Origen:    <span>${aeropuertos[ruta.origenCod]}</span></p>
+    <p>Destino:   <span>${aeropuertos[ruta.destinoCod]}</span></p>
+    <p>Aerolínea: <span>${ruta.aerolinea}</span></p>
+    <p>Duración:  <span>${ruta.duracion}</span></p>
+    <p>Fecha:     <span>${fecha}</span></p>
   `;
   divResultado.classList.remove("oculto");
 }
-
-
 
 // ---- EVENTOS ----
 
 // Botón BUSCAR
 btnBuscar.addEventListener("click", () => {
   const nombre  = inputNombre.value.trim();
+  const origen  = selectOrigen.value;
   const destino = selectDestino.value;
   const fecha   = selectFecha.value;
 
@@ -153,8 +183,16 @@ btnBuscar.addEventListener("click", () => {
     mostrarMensaje("Por favor ingresá tu nombre.", "error");
     return;
   }
+  if (!origen) {
+    mostrarMensaje("Por favor seleccioná un origen.", "error");
+    return;
+  }
   if (!destino) {
     mostrarMensaje("Por favor seleccioná un destino.", "error");
+    return;
+  }
+  if (origen === destino) {
+    mostrarMensaje("El origen y el destino no pueden ser iguales.", "error");
     return;
   }
   if (!fecha) {
@@ -162,10 +200,25 @@ btnBuscar.addEventListener("click", () => {
     return;
   }
 
-  const vuelo = buscarVuelo(destino);
-  vueloActual = { ...vuelo, pasajero: nombre, fecha };
+  const ruta = buscarRuta(origen, destino);
+
+  if (!ruta) {
+    mostrarMensaje("No hay vuelos disponibles para esa ruta.", "error");
+    divResultado.classList.add("oculto");
+    return;
+  }
+
+  vueloActual = {
+    pasajero:   nombre,
+    origen:     origen,
+    destino:    destino,
+    aerolinea:  ruta.aerolinea,
+    duracion:   ruta.duracion,
+    fecha:      fecha,
+  };
+
   ocultarMensaje();
-  mostrarResultadoVuelo(vuelo, nombre, fecha);
+  mostrarResultadoVuelo({ ...ruta, origenCod: origen, destinoCod: destino }, nombre, fecha);
 });
 
 // Botón CONFIRMAR RESERVA
@@ -179,6 +232,7 @@ btnReservar.addEventListener("click", () => {
   divResultado.classList.add("oculto");
 
   inputNombre.value = "";
+  selectOrigen.value = "";
   selectDestino.value = "";
   selectFecha.value = "";
   vueloActual = null;
@@ -187,6 +241,7 @@ btnReservar.addEventListener("click", () => {
 // Botón LIMPIAR
 btnLimpiar.addEventListener("click", () => {
   inputNombre.value = "";
+  selectOrigen.value = "";
   selectDestino.value = "";
   selectFecha.value = "";
   divResultado.classList.add("oculto");
@@ -205,5 +260,4 @@ btnBorrarTodo.addEventListener("click", () => {
 });
 
 // ---- INICIO ----
-// Carga las reservas guardadas al abrir la página
 renderizarReservas();
