@@ -181,7 +181,7 @@ function buildGrid(mes) {
       if (mismodia(fecha, fechaRegreso)) cell.classList.add("seleccionado", "fin");
       if (estaEnRango(fecha, fechaSalida, fechaRegreso)) cell.classList.add("en-rango");
 
-      cell.addEventListener("click", () => elegirDia(fecha));
+      cell.addEventListener("click", (e) => { e.stopPropagation(); elegirDia(fecha); });
     }
 
     grid.appendChild(cell);
@@ -193,18 +193,20 @@ function buildGrid(mes) {
 function elegirDia(fecha) {
   if (calModoActivo === "salida") {
     fechaSalida = fecha;
-    // Si el regreso es anterior a la nueva salida, lo limpiamos
     if (fechaRegreso && fechaRegreso <= fechaSalida) fechaRegreso = null;
 
-    // En ida y vuelta, pasamos automáticamente a elegir regreso
-    if (tipoViaje === "ida-vuelta") calModoActivo = "regreso";
+    if (tipoViaje === "ida-vuelta") {
+      // Pasar automáticamente a modo regreso sin cerrar
+      calModoActivo = "regreso";
+      actualizarResalteBotonesFecha();
+    }
+    // En solo ida no hay nada más que hacer, el botón Aplicar se habilita
 
   } else if (calModoActivo === "regreso") {
     if (fecha <= fechaSalida) {
-      // Clic en fecha anterior a salida: reiniciamos desde esa fecha
+      // Clic anterior a salida: reinicia desde esa fecha
       fechaSalida = fecha;
       fechaRegreso = null;
-      calModoActivo = "regreso";
     } else {
       fechaRegreso = fecha;
     }
@@ -213,24 +215,33 @@ function elegirDia(fecha) {
   renderCalendario();
 }
 
+// Resalta con clase cal-activo el botón del modo activo, quita del otro
+function actualizarResalteBotonesFecha() {
+  btnSalida.classList.toggle("cal-activo", calModoActivo === "salida");
+  btnRegreso.classList.toggle("cal-activo", calModoActivo === "regreso");
+}
+
 function abrirCalendario(modo) {
   calModoActivo = modo;
-  // Reinicia la vista al mes actual
   calBase = new Date();
   calBase.setDate(1);
   renderCalendario();
   calendario.classList.remove("oculto");
+  actualizarResalteBotonesFecha();
 }
 
 function cerrarCalendario() {
   calendario.classList.add("oculto");
   calModoActivo = null;
+  btnSalida.classList.remove("cal-activo");
+  btnRegreso.classList.remove("cal-activo");
 }
 
 function aplicarFechas() {
-  // Actualiza los botones con las fechas seleccionadas
-  btnSalida.textContent  = fechaSalida  ? formatFecha(fechaSalida)  : "Agregar fecha";
+  btnSalida.textContent = fechaSalida ? formatFecha(fechaSalida) : "Agregar fecha";
+  btnSalida.classList.toggle("tiene-fecha", !!fechaSalida);
   btnRegreso.textContent = fechaRegreso ? formatFecha(fechaRegreso) : "Agregar fecha";
+  btnRegreso.classList.toggle("tiene-fecha", !!fechaRegreso);
   cerrarCalendario();
 }
 
@@ -250,6 +261,7 @@ function setTipoViaje(tipo) {
     campoRegreso.classList.add("oculto");
     fechaRegreso = null;
     btnRegreso.textContent = "Agregar fecha";
+  btnRegreso.classList.remove("tiene-fecha");
   }
 }
 
@@ -357,20 +369,22 @@ function renderizarReservas() {
 
 // ---- LIMPIAR FORMULARIO ----
 
-function limpiarFormulario() {
+function limpiarFormulario(mantenerMensaje = false) {
   inputNombre.value      = "";
   selectOrigen.value     = "";
   selectDestino.value    = "";
   fechaSalida            = null;
   fechaRegreso           = null;
   btnSalida.textContent  = "Agregar fecha";
+  btnSalida.classList.remove("tiene-fecha");
   btnRegreso.textContent = "Agregar fecha";
+  btnRegreso.classList.remove("tiene-fecha");
   cantPasajeros          = 1;
   cantEl.textContent     = "1";
   btnMenos.disabled      = true;
   setTipoViaje("ida-vuelta");
   divResultado.classList.add("oculto");
-  ocultarMensaje();
+  if (!mantenerMensaje) ocultarMensaje();
   cerrarCalendario();
   vueloActual = null;
 }
@@ -403,17 +417,19 @@ btnRegreso.addEventListener("click", () => {
   }
 });
 
-calPrev.addEventListener("click", () => {
+calPrev.addEventListener("click", (e) => {
+  e.stopPropagation();
   calBase.setMonth(calBase.getMonth() - 1);
   renderCalendario();
 });
 
-calNext.addEventListener("click", () => {
+calNext.addEventListener("click", (e) => {
+  e.stopPropagation();
   calBase.setMonth(calBase.getMonth() + 1);
   renderCalendario();
 });
 
-calAplicar.addEventListener("click", aplicarFechas);
+calAplicar.addEventListener("click", (e) => { e.stopPropagation(); aplicarFechas(); });
 
 // Cerrar calendario al hacer clic fuera
 document.addEventListener("click", (e) => {
@@ -470,8 +486,8 @@ btnReservar.addEventListener("click", () => {
   if (!vueloActual) return;
   agregarReserva(vueloActual);
   renderizarReservas();
-  mostrarMensaje("¡Reserva confirmada! Buen viaje 🛫", "exito");
-  limpiarFormulario();
+  mostrarMensaje("¡Reserva confirmada! Buen viaje", "exito");
+  limpiarFormulario(true);
 });
 
 btnLimpiar.addEventListener("click", limpiarFormulario);
@@ -486,4 +502,5 @@ btnBorrarTodo.addEventListener("click", () => {
 
 // ---- INICIO ----
 btnMenos.disabled = true;
+setTipoViaje("ida-vuelta"); // inicializa el estado correcto del toggle y habilita regreso
 renderizarReservas();
