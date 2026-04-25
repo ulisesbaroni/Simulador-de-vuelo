@@ -25,11 +25,32 @@
     <section class="panel panel-form">
       <h2>Reservá tu vuelo</h2>
 
+      <!-- Nombre -->
       <div class="campo">
         <label for="nombre">Nombre del pasajero</label>
         <input type="text" id="nombre" placeholder="Ej: Juan Pérez" />
       </div>
 
+      <!-- Tipo de viaje + Pasajeros (misma fila) -->
+      <div class="campo-row">
+        <div class="campo">
+          <label>Tipo de viaje</label>
+          <div class="toggle-grupo">
+            <button class="toggle-btn activo" id="btn-ida-vuelta">Ida y vuelta</button>
+            <button class="toggle-btn" id="btn-solo-ida">Solo ida</button>
+          </div>
+        </div>
+        <div class="campo campo-pasajeros">
+          <label>Pasajeros</label>
+          <div class="pasajeros-control">
+            <button class="btn-pax" id="btn-menos">−</button>
+            <span id="cant-pasajeros">1</span>
+            <button class="btn-pax" id="btn-mas">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Origen -->
       <div class="campo">
         <label for="origen">Origen</label>
         <select id="origen">
@@ -52,6 +73,7 @@
         </select>
       </div>
 
+      <!-- Destino -->
       <div class="campo">
         <label for="destino">Destino</label>
         <select id="destino">
@@ -74,14 +96,32 @@
         </select>
       </div>
 
-      <div class="campo">
-        <label for="fecha">Fecha de vuelo</label>
-        <select id="fecha">
-          <option value="">-- Seleccioná una fecha --</option>
-          <option value="15/04/2025">15/04/2025</option>
-          <option value="22/04/2025">22/04/2025</option>
-          <option value="30/04/2025">30/04/2025</option>
-        </select>
+      <!-- Fechas -->
+      <div class="campo-row">
+        <!-- Salida -->
+        <div class="campo">
+          <label>Salida</label>
+          <button class="btn-fecha" id="btn-salida">Agregar fecha</button>
+        </div>
+        <!-- Regreso (solo ida y vuelta) -->
+        <div class="campo" id="campo-regreso">
+          <label>Regreso</label>
+          <button class="btn-fecha" id="btn-regreso" disabled>Agregar fecha</button>
+        </div>
+      </div>
+
+      <!-- Calendario (dropdown) -->
+      <div id="calendario" class="calendario oculto">
+        <div class="cal-header">
+          <button class="cal-nav" id="cal-prev">‹</button>
+          <div class="cal-meses" id="cal-meses"></div>
+          <button class="cal-nav" id="cal-next">›</button>
+        </div>
+        <div class="cal-grids" id="cal-grids"></div>
+        <div class="cal-footer">
+          <span id="cal-seleccion"></span>
+          <button id="cal-aplicar" class="cal-btn-aplicar" disabled>Aplicar</button>
+        </div>
       </div>
 
       <div class="botones">

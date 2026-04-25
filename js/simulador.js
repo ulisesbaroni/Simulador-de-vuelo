@@ -1,38 +1,27 @@
 // =============================================
-//   SIMULADOR DE VUELOS
-//   Entrega final JS
+//   SIMULADOR DE VUELOS — Entrega final JS
 // =============================================
 
 // ---- DATOS ----
-// Cada ruta tiene: origen, destino (códigos IATA), aerolínea y duración.
-// Una misma ruta aplica en ambas direcciones (ida y vuelta).
 
 const rutas = [
-  // Domésticas desde/hacia Aeroparque (AEP)
   { origen: "AEP", destino: "COR", aerolinea: "Aerolíneas Argentinas", duracion: "1h 20min" },
   { origen: "AEP", destino: "MDZ", aerolinea: "Flybondi",              duracion: "1h 45min" },
   { origen: "AEP", destino: "BRC", aerolinea: "LATAM",                 duracion: "2h 30min" },
   { origen: "AEP", destino: "ROS", aerolinea: "Aerolíneas Argentinas", duracion: "0h 55min" },
   { origen: "AEP", destino: "SLA", aerolinea: "JetSmart",              duracion: "2h 10min" },
-
-  // Domésticas desde/hacia Ezeiza (EZE)
   { origen: "EZE", destino: "COR", aerolinea: "JetSmart",              duracion: "1h 30min" },
   { origen: "EZE", destino: "MDZ", aerolinea: "Aerolíneas Argentinas", duracion: "1h 50min" },
   { origen: "EZE", destino: "BRC", aerolinea: "Aerolíneas Argentinas", duracion: "2h 40min" },
-
-  // Internacionales desde Ezeiza (EZE)
   { origen: "EZE", destino: "GRU", aerolinea: "LATAM",                 duracion: "3h 00min" },
   { origen: "EZE", destino: "SCL", aerolinea: "Sky Airline",           duracion: "2h 10min" },
   { origen: "EZE", destino: "MIA", aerolinea: "American Airlines",     duracion: "9h 00min" },
   { origen: "EZE", destino: "MAD", aerolinea: "Iberia",                duracion: "12h 30min" },
-
-  // Internacionales desde otros orígenes
   { origen: "SCL", destino: "MIA", aerolinea: "LATAM",                 duracion: "8h 30min" },
   { origen: "GRU", destino: "MAD", aerolinea: "Iberia",                duracion: "10h 45min" },
   { origen: "MIA", destino: "MAD", aerolinea: "Iberia",                duracion: "8h 00min" },
 ];
 
-// Nombres completos de aeropuertos por código IATA
 const aeropuertos = {
   EZE: "Buenos Aires — Ezeiza (EZE)",
   AEP: "Buenos Aires — Aeroparque (AEP)",
@@ -47,12 +36,42 @@ const aeropuertos = {
   MAD: "Madrid — Adolfo Suárez Barajas (MAD)",
 };
 
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
+
+// ---- ESTADO ----
+
+let tipoViaje     = "ida-vuelta";   // "ida-vuelta" | "solo-ida"
+let cantPasajeros = 1;
+let fechaSalida   = null;           // objeto Date
+let fechaRegreso  = null;           // objeto Date
+let calModoActivo = null;           // "salida" | "regreso"
+let calBase       = new Date();     // primer mes visible en el calendario
+calBase.setDate(1);
+
+let vueloActual  = null;
+let timerMensaje = null;
+
 // ---- REFERENCIAS AL DOM ----
 
 const inputNombre      = document.getElementById("nombre");
 const selectOrigen     = document.getElementById("origen");
 const selectDestino    = document.getElementById("destino");
-const selectFecha      = document.getElementById("fecha");
+const btnIdaVuelta     = document.getElementById("btn-ida-vuelta");
+const btnSoloIda       = document.getElementById("btn-solo-ida");
+const btnMenos         = document.getElementById("btn-menos");
+const btnMas           = document.getElementById("btn-mas");
+const cantEl           = document.getElementById("cant-pasajeros");
+const btnSalida        = document.getElementById("btn-salida");
+const btnRegreso       = document.getElementById("btn-regreso");
+const campoRegreso     = document.getElementById("campo-regreso");
+const calendario       = document.getElementById("calendario");
+const calMeses         = document.getElementById("cal-meses");
+const calGrids         = document.getElementById("cal-grids");
+const calPrev          = document.getElementById("cal-prev");
+const calNext          = document.getElementById("cal-next");
+const calSeleccion     = document.getElementById("cal-seleccion");
+const calAplicar       = document.getElementById("cal-aplicar");
 const btnBuscar        = document.getElementById("btn-buscar");
 const btnLimpiar       = document.getElementById("btn-limpiar");
 const btnReservar      = document.getElementById("btn-reservar");
@@ -62,15 +81,189 @@ const divResultado     = document.getElementById("resultado-vuelo");
 const divInfoVuelo     = document.getElementById("info-vuelo");
 const divListaReservas = document.getElementById("lista-reservas");
 
-// Guarda temporalmente el vuelo encontrado antes de confirmar
-let vueloActual = null;
+// ---- HELPERS DE FECHA ----
 
-// Referencia al temporizador del mensaje de éxito
-let timerMensaje = null;
+function formatFecha(date) {
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
 
-// ---- FUNCIONES ----
+function mismodia(a, b) {
+  return a && b &&
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth()    === b.getMonth()    &&
+    a.getDate()     === b.getDate();
+}
 
-// Busca una ruta por origen y destino (también verifica la inversa)
+function estaEnRango(date, desde, hasta) {
+  if (!desde || !hasta) return false;
+  return date > desde && date < hasta;
+}
+
+// ---- CALENDARIO ----
+
+function renderCalendario() {
+  // Dos meses: calBase y calBase+1
+  const mes0 = new Date(calBase.getFullYear(), calBase.getMonth(), 1);
+  const mes1 = new Date(calBase.getFullYear(), calBase.getMonth() + 1, 1);
+
+  // Headers de mes
+  calMeses.innerHTML = `
+    <span>${MESES[mes0.getMonth()]} ${mes0.getFullYear()}</span>
+    <span>${MESES[mes1.getMonth()]} ${mes1.getFullYear()}</span>
+  `;
+
+  calGrids.innerHTML = "";
+  [mes0, mes1].forEach(mes => {
+    calGrids.appendChild(buildGrid(mes));
+  });
+
+  // Texto de selección
+  if (fechaSalida && fechaRegreso) {
+    calSeleccion.textContent = `${formatFecha(fechaSalida)}  →  ${formatFecha(fechaRegreso)}`;
+  } else if (fechaSalida) {
+    calSeleccion.textContent = tipoViaje === "solo-ida"
+      ? formatFecha(fechaSalida)
+      : `${formatFecha(fechaSalida)}  →  ?`;
+  } else {
+    calSeleccion.textContent = "";
+  }
+
+  // Habilitar botón aplicar
+  const listo = tipoViaje === "solo-ida"
+    ? fechaSalida !== null
+    : fechaSalida !== null && fechaRegreso !== null;
+  calAplicar.disabled = !listo;
+}
+
+function buildGrid(mes) {
+  const hoy     = new Date(); hoy.setHours(0,0,0,0);
+  const year    = mes.getFullYear();
+  const month   = mes.getMonth();
+  const primer  = new Date(year, month, 1).getDay(); // día semana del 1ro
+  const ultimo  = new Date(year, month + 1, 0).getDate();
+
+  const grid = document.createElement("div");
+  grid.className = "cal-grid";
+
+  // Cabecera días
+  DIAS.forEach(d => {
+    const cell = document.createElement("span");
+    cell.className = "cal-dia-nombre";
+    cell.textContent = d;
+    grid.appendChild(cell);
+  });
+
+  // Celdas vacías iniciales
+  for (let i = 0; i < primer; i++) {
+    const vacio = document.createElement("span");
+    grid.appendChild(vacio);
+  }
+
+  // Días del mes
+  for (let dia = 1; dia <= ultimo; dia++) {
+    const fecha = new Date(year, month, dia);
+    fecha.setHours(0,0,0,0);
+
+    const cell = document.createElement("button");
+    cell.className = "cal-dia";
+    cell.textContent = dia;
+
+    const pasado = fecha < hoy;
+    if (pasado) {
+      cell.disabled = true;
+      cell.classList.add("pasado");
+    } else {
+      // Clases de selección
+      if (mismodia(fecha, fechaSalida)) cell.classList.add("seleccionado", "inicio");
+      if (mismodia(fecha, fechaRegreso)) cell.classList.add("seleccionado", "fin");
+      if (estaEnRango(fecha, fechaSalida, fechaRegreso)) cell.classList.add("en-rango");
+
+      cell.addEventListener("click", () => elegirDia(fecha));
+    }
+
+    grid.appendChild(cell);
+  }
+
+  return grid;
+}
+
+function elegirDia(fecha) {
+  if (calModoActivo === "salida") {
+    fechaSalida = fecha;
+    // Si el regreso es anterior a la nueva salida, lo limpiamos
+    if (fechaRegreso && fechaRegreso <= fechaSalida) fechaRegreso = null;
+
+    // En ida y vuelta, pasamos automáticamente a elegir regreso
+    if (tipoViaje === "ida-vuelta") calModoActivo = "regreso";
+
+  } else if (calModoActivo === "regreso") {
+    if (fecha <= fechaSalida) {
+      // Clic en fecha anterior a salida: reiniciamos desde esa fecha
+      fechaSalida = fecha;
+      fechaRegreso = null;
+      calModoActivo = "regreso";
+    } else {
+      fechaRegreso = fecha;
+    }
+  }
+
+  renderCalendario();
+}
+
+function abrirCalendario(modo) {
+  calModoActivo = modo;
+  // Reinicia la vista al mes actual
+  calBase = new Date();
+  calBase.setDate(1);
+  renderCalendario();
+  calendario.classList.remove("oculto");
+}
+
+function cerrarCalendario() {
+  calendario.classList.add("oculto");
+  calModoActivo = null;
+}
+
+function aplicarFechas() {
+  // Actualiza los botones con las fechas seleccionadas
+  btnSalida.textContent  = fechaSalida  ? formatFecha(fechaSalida)  : "Agregar fecha";
+  btnRegreso.textContent = fechaRegreso ? formatFecha(fechaRegreso) : "Agregar fecha";
+  cerrarCalendario();
+}
+
+// ---- TIPO DE VIAJE ----
+
+function setTipoViaje(tipo) {
+  tipoViaje = tipo;
+
+  if (tipo === "ida-vuelta") {
+    btnIdaVuelta.classList.add("activo");
+    btnSoloIda.classList.remove("activo");
+    campoRegreso.classList.remove("oculto");
+    btnRegreso.disabled = false;
+  } else {
+    btnSoloIda.classList.add("activo");
+    btnIdaVuelta.classList.remove("activo");
+    campoRegreso.classList.add("oculto");
+    fechaRegreso = null;
+    btnRegreso.textContent = "Agregar fecha";
+  }
+}
+
+// ---- PASAJEROS ----
+
+function actualizarPasajeros(delta) {
+  cantPasajeros = Math.min(9, Math.max(1, cantPasajeros + delta));
+  cantEl.textContent = cantPasajeros;
+  btnMenos.disabled = cantPasajeros === 1;
+  btnMas.disabled   = cantPasajeros === 9;
+}
+
+// ---- LÓGICA DE VUELOS ----
+
 function buscarRuta(origen, destino) {
   return rutas.find(
     r => (r.origen === origen && r.destino === destino) ||
@@ -78,25 +271,34 @@ function buscarRuta(origen, destino) {
   ) || null;
 }
 
-// Muestra un mensaje en el DOM.
-// Si es de tipo "exito", se cierra automáticamente a los 4 segundos.
+function mostrarResultadoVuelo(ruta, nombre, fecha, regreso) {
+  let html = `
+    <p>Pasajero:   <span>${nombre}</span></p>
+    <p>Origen:     <span>${aeropuertos[ruta.origenCod]}</span></p>
+    <p>Destino:    <span>${aeropuertos[ruta.destinoCod]}</span></p>
+    <p>Aerolínea:  <span>${ruta.aerolinea}</span></p>
+    <p>Duración:   <span>${ruta.duracion}</span></p>
+    <p>Salida:     <span>${fecha}</span></p>
+  `;
+  if (regreso) html += `<p>Regreso:    <span>${regreso}</span></p>`;
+  html += `<p>Pasajeros:  <span>${cantPasajeros}</span></p>`;
+  divInfoVuelo.innerHTML = html;
+  divResultado.classList.remove("oculto");
+}
+
+// ---- MENSAJES ----
+
 function mostrarMensaje(texto, tipo) {
   if (timerMensaje) clearTimeout(timerMensaje);
-
   divMensaje.textContent = texto;
   divMensaje.className = "mensaje " + tipo;
-
   if (tipo === "exito") {
     timerMensaje = setTimeout(ocultarMensaje, 4000);
   }
 }
 
-// Oculta el mensaje y limpia el temporizador
 function ocultarMensaje() {
-  if (timerMensaje) {
-    clearTimeout(timerMensaje);
-    timerMensaje = null;
-  }
+  if (timerMensaje) { clearTimeout(timerMensaje); timerMensaje = null; }
   divMensaje.className = "mensaje oculto";
   divMensaje.textContent = "";
 }
@@ -118,38 +320,33 @@ function agregarReserva(reserva) {
   guardarReservas(reservas);
 }
 
-// Elimina una reserva por su índice (pide confirmación antes)
 function eliminarReserva(indice) {
-  const confirmar = confirm("¿Seguro que querés eliminar esta reserva?");
-  if (!confirmar) return;
-
+  if (!confirm("¿Seguro que querés eliminar esta reserva?")) return;
   const reservas = obtenerReservas();
   reservas.splice(indice, 1);
   guardarReservas(reservas);
   renderizarReservas();
 }
 
-// ---- RENDER ----
+// ---- RENDER RESERVAS ----
 
 function renderizarReservas() {
   const reservas = obtenerReservas();
-
   if (reservas.length === 0) {
     divListaReservas.innerHTML = '<p class="vacio">Aún no tenés reservas guardadas.</p>';
     return;
   }
-
   divListaReservas.innerHTML = "";
-
   reservas.forEach((r, i) => {
     const item = document.createElement("div");
     item.className = "reserva-item";
     item.innerHTML = `
       <div class="reserva-info">
         <p class="reserva-ruta">${r.origen} → ${r.destino}</p>
-        <p><strong>${r.pasajero}</strong></p>
+        <p><strong>${r.pasajero}</strong> · ${r.pasajeros} pax</p>
         <p>${r.aerolinea} · ${r.duracion}</p>
-        <p>📅 ${r.fecha}</p>
+        <p>📅 Salida: ${r.fecha}${r.regreso ? `  ·  Regreso: ${r.regreso}` : ""}</p>
+        <p class="reserva-tipo">${r.tipoViaje === "ida-vuelta" ? "✈ Ida y vuelta" : "✈ Solo ida"}</p>
       </div>
       <button class="btn-eliminar" title="Eliminar reserva">✕</button>
     `;
@@ -158,50 +355,90 @@ function renderizarReservas() {
   });
 }
 
-function mostrarResultadoVuelo(ruta, nombre, fecha) {
-  divInfoVuelo.innerHTML = `
-    <p>Pasajero:  <span>${nombre}</span></p>
-    <p>Origen:    <span>${aeropuertos[ruta.origenCod]}</span></p>
-    <p>Destino:   <span>${aeropuertos[ruta.destinoCod]}</span></p>
-    <p>Aerolínea: <span>${ruta.aerolinea}</span></p>
-    <p>Duración:  <span>${ruta.duracion}</span></p>
-    <p>Fecha:     <span>${fecha}</span></p>
-  `;
-  divResultado.classList.remove("oculto");
+// ---- LIMPIAR FORMULARIO ----
+
+function limpiarFormulario() {
+  inputNombre.value      = "";
+  selectOrigen.value     = "";
+  selectDestino.value    = "";
+  fechaSalida            = null;
+  fechaRegreso           = null;
+  btnSalida.textContent  = "Agregar fecha";
+  btnRegreso.textContent = "Agregar fecha";
+  cantPasajeros          = 1;
+  cantEl.textContent     = "1";
+  btnMenos.disabled      = true;
+  setTipoViaje("ida-vuelta");
+  divResultado.classList.add("oculto");
+  ocultarMensaje();
+  cerrarCalendario();
+  vueloActual = null;
 }
 
 // ---- EVENTOS ----
 
-// Botón BUSCAR
+btnIdaVuelta.addEventListener("click", () => setTipoViaje("ida-vuelta"));
+btnSoloIda.addEventListener("click",   () => setTipoViaje("solo-ida"));
+
+btnMenos.addEventListener("click", () => actualizarPasajeros(-1));
+btnMas.addEventListener("click",   () => actualizarPasajeros(+1));
+
+btnSalida.addEventListener("click", () => {
+  if (calendario.classList.contains("oculto") || calModoActivo !== "salida") {
+    abrirCalendario("salida");
+  } else {
+    cerrarCalendario();
+  }
+});
+
+btnRegreso.addEventListener("click", () => {
+  if (!fechaSalida) {
+    mostrarMensaje("Primero seleccioná la fecha de salida.", "error");
+    return;
+  }
+  if (calendario.classList.contains("oculto") || calModoActivo !== "regreso") {
+    abrirCalendario("regreso");
+  } else {
+    cerrarCalendario();
+  }
+});
+
+calPrev.addEventListener("click", () => {
+  calBase.setMonth(calBase.getMonth() - 1);
+  renderCalendario();
+});
+
+calNext.addEventListener("click", () => {
+  calBase.setMonth(calBase.getMonth() + 1);
+  renderCalendario();
+});
+
+calAplicar.addEventListener("click", aplicarFechas);
+
+// Cerrar calendario al hacer clic fuera
+document.addEventListener("click", (e) => {
+  if (!calendario.contains(e.target) &&
+      e.target !== btnSalida &&
+      e.target !== btnRegreso) {
+    cerrarCalendario();
+  }
+});
+
 btnBuscar.addEventListener("click", () => {
   const nombre  = inputNombre.value.trim();
   const origen  = selectOrigen.value;
   const destino = selectDestino.value;
-  const fecha   = selectFecha.value;
 
-  if (!nombre) {
-    mostrarMensaje("Por favor ingresá tu nombre.", "error");
-    return;
-  }
-  if (!origen) {
-    mostrarMensaje("Por favor seleccioná un origen.", "error");
-    return;
-  }
-  if (!destino) {
-    mostrarMensaje("Por favor seleccioná un destino.", "error");
-    return;
-  }
-  if (origen === destino) {
-    mostrarMensaje("El origen y el destino no pueden ser iguales.", "error");
-    return;
-  }
-  if (!fecha) {
-    mostrarMensaje("Por favor seleccioná una fecha.", "error");
-    return;
+  if (!nombre)  { mostrarMensaje("Por favor ingresá tu nombre.", "error"); return; }
+  if (!origen)  { mostrarMensaje("Por favor seleccioná un origen.", "error"); return; }
+  if (!destino) { mostrarMensaje("Por favor seleccioná un destino.", "error"); return; }
+  if (origen === destino) { mostrarMensaje("El origen y el destino no pueden ser iguales.", "error"); return; }
+  if (!fechaSalida) { mostrarMensaje("Por favor seleccioná la fecha de salida.", "error"); return; }
+  if (tipoViaje === "ida-vuelta" && !fechaRegreso) {
+    mostrarMensaje("Por favor seleccioná la fecha de regreso.", "error"); return;
   }
 
   const ruta = buscarRuta(origen, destino);
-
   if (!ruta) {
     mostrarMensaje("No hay vuelos disponibles para esa ruta.", "error");
     divResultado.classList.add("oculto");
@@ -209,55 +446,44 @@ btnBuscar.addEventListener("click", () => {
   }
 
   vueloActual = {
-    pasajero:   nombre,
-    origen:     origen,
-    destino:    destino,
-    aerolinea:  ruta.aerolinea,
-    duracion:   ruta.duracion,
-    fecha:      fecha,
+    pasajero:  nombre,
+    pasajeros: cantPasajeros,
+    tipoViaje,
+    origen,
+    destino,
+    aerolinea: ruta.aerolinea,
+    duracion:  ruta.duracion,
+    fecha:     formatFecha(fechaSalida),
+    regreso:   fechaRegreso ? formatFecha(fechaRegreso) : null,
   };
 
   ocultarMensaje();
-  mostrarResultadoVuelo({ ...ruta, origenCod: origen, destinoCod: destino }, nombre, fecha);
+  mostrarResultadoVuelo(
+    { ...ruta, origenCod: origen, destinoCod: destino },
+    nombre,
+    formatFecha(fechaSalida),
+    fechaRegreso ? formatFecha(fechaRegreso) : null
+  );
 });
 
-// Botón CONFIRMAR RESERVA
 btnReservar.addEventListener("click", () => {
   if (!vueloActual) return;
-
   agregarReserva(vueloActual);
   renderizarReservas();
-
   mostrarMensaje("¡Reserva confirmada! Buen viaje 🛫", "exito");
-  divResultado.classList.add("oculto");
-
-  inputNombre.value = "";
-  selectOrigen.value = "";
-  selectDestino.value = "";
-  selectFecha.value = "";
-  vueloActual = null;
+  limpiarFormulario();
 });
 
-// Botón LIMPIAR
-btnLimpiar.addEventListener("click", () => {
-  inputNombre.value = "";
-  selectOrigen.value = "";
-  selectDestino.value = "";
-  selectFecha.value = "";
-  divResultado.classList.add("oculto");
-  ocultarMensaje();
-  vueloActual = null;
-});
+btnLimpiar.addEventListener("click", limpiarFormulario);
 
-// Botón BORRAR TODO
 btnBorrarTodo.addEventListener("click", () => {
   if (obtenerReservas().length === 0) return;
-  const confirmar = confirm("¿Seguro que querés borrar todas las reservas?");
-  if (confirmar) {
+  if (confirm("¿Seguro que querés borrar todas las reservas?")) {
     localStorage.removeItem("reservas");
     renderizarReservas();
   }
 });
 
 // ---- INICIO ----
+btnMenos.disabled = true;
 renderizarReservas();
