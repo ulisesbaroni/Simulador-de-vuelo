@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simulador de Vuelos</title>
-  <meta name="description" content="Simulador de vuelos interactivo. Buscá destinos, elegí tu fecha y guardá tus reservas." />
+  <meta name="description" content="Simulador de reservas de vuelos domésticos e internacionales." />
   <meta name="author" content="Ulises" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -12,21 +12,11 @@
 </head>
 <body>
 
-  <header>
-    <div class="header-inner">
-      <span class="logo">✈ SKYBOOK</span>
-      <p class="tagline">Entrega final JS</p>
-    </div>
-  </header>
-
-  <!-- PANTALLA DE INICIO -->
   <div id="pantalla-inicio">
     <div class="inicio-contenido">
       <p class="inicio-pre">Bienvenido a</p>
       <h1 class="inicio-logo">✈ SKYBOOK</h1>
-      <p class="inicio-desc">
-        Simulador de reservas de vuelos domésticos e internacionales.
-      </p>
+      <p class="inicio-desc">Simulador de reservas de vuelos domésticos e internacionales.</p>
       <ul class="inicio-pasos">
         <li><span>1</span> Elegí origen, destino y fechas</li>
         <li><span>2</span> Buscá el vuelo disponible</li>
@@ -36,19 +26,24 @@
     </div>
   </div>
 
+  <header>
+    <div class="header-inner">
+      <span class="logo">✈ SKYBOOK</span>
+      <p class="tagline">Entrega final JS</p>
+    </div>
+  </header>
+
   <main class="oculto" id="app">
 
     <!-- PANEL IZQUIERDO: Formulario -->
     <section class="panel panel-form">
       <h2>Reservá tu vuelo</h2>
 
-      <!-- Nombre -->
       <div class="campo">
         <label for="nombre">Nombre del pasajero</label>
         <input type="text" id="nombre" placeholder="Ej: Juan Pérez" />
       </div>
 
-      <!-- Tipo de viaje + Pasajeros (misma fila) -->
       <div class="campo-row">
         <div class="campo">
           <label>Tipo de viaje</label>
@@ -67,7 +62,6 @@
         </div>
       </div>
 
-      <!-- Origen -->
       <div class="campo">
         <label for="origen">Origen</label>
         <select id="origen">
@@ -90,7 +84,6 @@
         </select>
       </div>
 
-      <!-- Destino -->
       <div class="campo">
         <label for="destino">Destino</label>
         <select id="destino">
@@ -113,21 +106,17 @@
         </select>
       </div>
 
-      <!-- Fechas -->
       <div class="campo-row-fechas">
-        <!-- Salida -->
         <div class="campo">
           <label>Salida</label>
           <button class="btn-fecha" id="btn-salida">Agregar fecha</button>
         </div>
-        <!-- Regreso (solo ida y vuelta) -->
         <div class="campo" id="campo-regreso">
           <label>Regreso</label>
           <button class="btn-fecha" id="btn-regreso" disabled>Agregar fecha</button>
         </div>
       </div>
 
-      <!-- Calendario (dropdown) -->
       <div id="calendario" class="calendario oculto">
         <div class="cal-header">
           <button class="cal-nav" id="cal-prev">‹</button>

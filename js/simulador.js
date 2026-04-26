@@ -1,8 +1,5 @@
-// =============================================
-//   SIMULADOR DE VUELOS — Entrega final JS
-// =============================================
 
-// ---- DATOS ----
+// ---- Datos ----
 
 const rutas = [
   { origen: "AEP", destino: "COR", aerolinea: "Aerolíneas Argentinas", duracion: "1h 20min" },
@@ -39,20 +36,18 @@ const aeropuertos = {
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
 
-// ---- ESTADO ----
+// ---- Estado de la aplicación ----
 
-let tipoViaje     = "ida-vuelta";   // "ida-vuelta" | "solo-ida"
+let tipoViaje     = "ida-vuelta";
 let cantPasajeros = 1;
-let fechaSalida   = null;           // objeto Date
-let fechaRegreso  = null;           // objeto Date
-let calModoActivo = null;           // "salida" | "regreso"
-let calBase       = new Date();     // primer mes visible en el calendario
-calBase.setDate(1);
+let fechaSalida   = null;
+let fechaRegreso  = null;
+let calModoActivo = null;
+let calBase       = new Date(); calBase.setDate(1);
+let vueloActual   = null;
+let timerMensaje  = null;
 
-let vueloActual  = null;
-let timerMensaje = null;
-
-// ---- REFERENCIAS AL DOM ----
+// ---- Referencias al DOM ----
 
 const inputNombre      = document.getElementById("nombre");
 const selectOrigen     = document.getElementById("origen");
@@ -81,13 +76,12 @@ const divResultado     = document.getElementById("resultado-vuelo");
 const divInfoVuelo     = document.getElementById("info-vuelo");
 const divListaReservas = document.getElementById("lista-reservas");
 
-// ---- HELPERS DE FECHA ----
+// ---- Helpers ----
 
 function formatFecha(date) {
   const d = String(date.getDate()).padStart(2, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
+  return `${d}/${m}/${date.getFullYear()}`;
 }
 
 function mismodia(a, b) {
@@ -98,29 +92,23 @@ function mismodia(a, b) {
 }
 
 function estaEnRango(date, desde, hasta) {
-  if (!desde || !hasta) return false;
-  return date > desde && date < hasta;
+  return desde && hasta && date > desde && date < hasta;
 }
 
-// ---- CALENDARIO ----
+// ---- Calendario ----
 
 function renderCalendario() {
-  // Dos meses: calBase y calBase+1
   const mes0 = new Date(calBase.getFullYear(), calBase.getMonth(), 1);
   const mes1 = new Date(calBase.getFullYear(), calBase.getMonth() + 1, 1);
 
-  // Headers de mes
   calMeses.innerHTML = `
     <span>${MESES[mes0.getMonth()]} ${mes0.getFullYear()}</span>
     <span>${MESES[mes1.getMonth()]} ${mes1.getFullYear()}</span>
   `;
 
   calGrids.innerHTML = "";
-  [mes0, mes1].forEach(mes => {
-    calGrids.appendChild(buildGrid(mes));
-  });
+  [mes0, mes1].forEach(mes => calGrids.appendChild(buildGrid(mes)));
 
-  // Texto de selección
   if (fechaSalida && fechaRegreso) {
     calSeleccion.textContent = `${formatFecha(fechaSalida)}  →  ${formatFecha(fechaRegreso)}`;
   } else if (fechaSalida) {
@@ -131,7 +119,6 @@ function renderCalendario() {
     calSeleccion.textContent = "";
   }
 
-  // Habilitar botón aplicar
   const listo = tipoViaje === "solo-ida"
     ? fechaSalida !== null
     : fechaSalida !== null && fechaRegreso !== null;
@@ -139,16 +126,15 @@ function renderCalendario() {
 }
 
 function buildGrid(mes) {
-  const hoy     = new Date(); hoy.setHours(0,0,0,0);
-  const year    = mes.getFullYear();
-  const month   = mes.getMonth();
-  const primer  = new Date(year, month, 1).getDay(); // día semana del 1ro
-  const ultimo  = new Date(year, month + 1, 0).getDate();
+  const hoy    = new Date(); hoy.setHours(0,0,0,0);
+  const year   = mes.getFullYear();
+  const month  = mes.getMonth();
+  const primer = new Date(year, month, 1).getDay();
+  const ultimo = new Date(year, month + 1, 0).getDate();
 
   const grid = document.createElement("div");
   grid.className = "cal-grid";
 
-  // Cabecera días
   DIAS.forEach(d => {
     const cell = document.createElement("span");
     cell.className = "cal-dia-nombre";
@@ -156,13 +142,10 @@ function buildGrid(mes) {
     grid.appendChild(cell);
   });
 
-  // Celdas vacías iniciales
   for (let i = 0; i < primer; i++) {
-    const vacio = document.createElement("span");
-    grid.appendChild(vacio);
+    grid.appendChild(document.createElement("span"));
   }
 
-  // Días del mes
   for (let dia = 1; dia <= ultimo; dia++) {
     const fecha = new Date(year, month, dia);
     fecha.setHours(0,0,0,0);
@@ -171,16 +154,13 @@ function buildGrid(mes) {
     cell.className = "cal-dia";
     cell.textContent = dia;
 
-    const pasado = fecha < hoy;
-    if (pasado) {
+    if (fecha < hoy) {
       cell.disabled = true;
       cell.classList.add("pasado");
     } else {
-      // Clases de selección
-      if (mismodia(fecha, fechaSalida)) cell.classList.add("seleccionado", "inicio");
+      if (mismodia(fecha, fechaSalida))  cell.classList.add("seleccionado", "inicio");
       if (mismodia(fecha, fechaRegreso)) cell.classList.add("seleccionado", "fin");
       if (estaEnRango(fecha, fechaSalida, fechaRegreso)) cell.classList.add("en-rango");
-
       cell.addEventListener("click", (e) => { e.stopPropagation(); elegirDia(fecha); });
     }
 
@@ -196,15 +176,12 @@ function elegirDia(fecha) {
     if (fechaRegreso && fechaRegreso <= fechaSalida) fechaRegreso = null;
 
     if (tipoViaje === "ida-vuelta") {
-      // Pasar automáticamente a modo regreso sin cerrar
       calModoActivo = "regreso";
       actualizarResalteBotonesFecha();
     }
-    // En solo ida no hay nada más que hacer, el botón Aplicar se habilita
 
   } else if (calModoActivo === "regreso") {
     if (fecha <= fechaSalida) {
-      // Clic anterior a salida: reinicia desde esa fecha
       fechaSalida = fecha;
       fechaRegreso = null;
     } else {
@@ -215,7 +192,6 @@ function elegirDia(fecha) {
   renderCalendario();
 }
 
-// Resalta con clase cal-activo el botón del modo activo, quita del otro
 function actualizarResalteBotonesFecha() {
   btnSalida.classList.toggle("cal-activo", calModoActivo === "salida");
   btnRegreso.classList.toggle("cal-activo", calModoActivo === "regreso");
@@ -223,8 +199,7 @@ function actualizarResalteBotonesFecha() {
 
 function abrirCalendario(modo) {
   calModoActivo = modo;
-  calBase = new Date();
-  calBase.setDate(1);
+  calBase = new Date(); calBase.setDate(1);
   renderCalendario();
   calendario.classList.remove("oculto");
   actualizarResalteBotonesFecha();
@@ -245,7 +220,7 @@ function aplicarFechas() {
   cerrarCalendario();
 }
 
-// ---- TIPO DE VIAJE ----
+// ---- Tipo de viaje ----
 
 function setTipoViaje(tipo) {
   tipoViaje = tipo;
@@ -261,11 +236,11 @@ function setTipoViaje(tipo) {
     campoRegreso.classList.add("oculto");
     fechaRegreso = null;
     btnRegreso.textContent = "Agregar fecha";
-  btnRegreso.classList.remove("tiene-fecha");
+    btnRegreso.classList.remove("tiene-fecha");
   }
 }
 
-// ---- PASAJEROS ----
+// ---- Pasajeros ----
 
 function actualizarPasajeros(delta) {
   cantPasajeros = Math.min(9, Math.max(1, cantPasajeros + delta));
@@ -274,7 +249,7 @@ function actualizarPasajeros(delta) {
   btnMas.disabled   = cantPasajeros === 9;
 }
 
-// ---- LÓGICA DE VUELOS ----
+// ---- Vuelos ----
 
 function buscarRuta(origen, destino) {
   return rutas.find(
@@ -283,14 +258,14 @@ function buscarRuta(origen, destino) {
   ) || null;
 }
 
-function mostrarResultadoVuelo(ruta, nombre, fecha, regreso) {
+function mostrarResultadoVuelo(ruta, nombre, salida, regreso) {
   let html = `
     <p>Pasajero:   <span>${nombre}</span></p>
     <p>Origen:     <span>${aeropuertos[ruta.origenCod]}</span></p>
     <p>Destino:    <span>${aeropuertos[ruta.destinoCod]}</span></p>
     <p>Aerolínea:  <span>${ruta.aerolinea}</span></p>
     <p>Duración:   <span>${ruta.duracion}</span></p>
-    <p>Salida:     <span>${fecha}</span></p>
+    <p>Salida:     <span>${salida}</span></p>
   `;
   if (regreso) html += `<p>Regreso:    <span>${regreso}</span></p>`;
   html += `<p>Pasajeros:  <span>${cantPasajeros}</span></p>`;
@@ -298,15 +273,13 @@ function mostrarResultadoVuelo(ruta, nombre, fecha, regreso) {
   divResultado.classList.remove("oculto");
 }
 
-// ---- MENSAJES ----
+// ---- Mensajes ----
 
 function mostrarMensaje(texto, tipo) {
   if (timerMensaje) clearTimeout(timerMensaje);
   divMensaje.textContent = texto;
   divMensaje.className = "mensaje " + tipo;
-  if (tipo === "exito") {
-    timerMensaje = setTimeout(ocultarMensaje, 4000);
-  }
+  if (tipo === "exito") timerMensaje = setTimeout(ocultarMensaje, 4000);
 }
 
 function ocultarMensaje() {
@@ -315,7 +288,7 @@ function ocultarMensaje() {
   divMensaje.textContent = "";
 }
 
-// ---- LOCALSTORAGE ----
+// ---- localStorage ----
 
 function obtenerReservas() {
   const guardadas = localStorage.getItem("reservas");
@@ -340,15 +313,18 @@ function eliminarReserva(indice) {
   renderizarReservas();
 }
 
-// ---- RENDER RESERVAS ----
+// ---- Render de reservas ----
 
 function renderizarReservas() {
   const reservas = obtenerReservas();
+
   if (reservas.length === 0) {
     divListaReservas.innerHTML = '<p class="vacio">Aún no tenés reservas guardadas.</p>';
     return;
   }
+
   divListaReservas.innerHTML = "";
+
   reservas.forEach((r, i) => {
     const item = document.createElement("div");
     item.className = "reserva-item";
@@ -357,7 +333,7 @@ function renderizarReservas() {
         <p class="reserva-ruta">${r.origen} → ${r.destino}</p>
         <p><strong>${r.pasajero}</strong> · ${r.pasajeros} pax</p>
         <p>${r.aerolinea} · ${r.duracion}</p>
-        <p>📅 Salida: ${r.fecha}${r.regreso ? `  ·  Regreso: ${r.regreso}` : ""}</p>
+        <p>Salida: ${r.fecha}${r.regreso ? `  ·  Regreso: ${r.regreso}` : ""}</p>
         <p class="reserva-tipo">${r.tipoViaje === "ida-vuelta" ? "✈ Ida y vuelta" : "✈ Solo ida"}</p>
       </div>
       <button class="btn-eliminar" title="Eliminar reserva">✕</button>
@@ -367,29 +343,29 @@ function renderizarReservas() {
   });
 }
 
-// ---- LIMPIAR FORMULARIO ----
+// ---- Limpiar formulario ----
 
 function limpiarFormulario(mantenerMensaje = false) {
-  inputNombre.value      = "";
-  selectOrigen.value     = "";
-  selectDestino.value    = "";
-  fechaSalida            = null;
-  fechaRegreso           = null;
+  inputNombre.value   = "";
+  selectOrigen.value  = "";
+  selectDestino.value = "";
+  fechaSalida         = null;
+  fechaRegreso        = null;
+  cantPasajeros       = 1;
+  cantEl.textContent  = "1";
+  btnMenos.disabled   = true;
   btnSalida.textContent  = "Agregar fecha";
   btnSalida.classList.remove("tiene-fecha");
   btnRegreso.textContent = "Agregar fecha";
   btnRegreso.classList.remove("tiene-fecha");
-  cantPasajeros          = 1;
-  cantEl.textContent     = "1";
-  btnMenos.disabled      = true;
+  vueloActual = null;
   setTipoViaje("ida-vuelta");
   divResultado.classList.add("oculto");
-  if (!mantenerMensaje) ocultarMensaje();
   cerrarCalendario();
-  vueloActual = null;
+  if (!mantenerMensaje) ocultarMensaje();
 }
 
-// ---- EVENTOS ----
+// ---- Eventos ----
 
 btnIdaVuelta.addEventListener("click", () => setTipoViaje("ida-vuelta"));
 btnSoloIda.addEventListener("click",   () => setTipoViaje("solo-ida"));
@@ -431,7 +407,6 @@ calNext.addEventListener("click", (e) => {
 
 calAplicar.addEventListener("click", (e) => { e.stopPropagation(); aplicarFechas(); });
 
-// Cerrar calendario al hacer clic fuera
 document.addEventListener("click", (e) => {
   if (!calendario.contains(e.target) &&
       e.target !== btnSalida &&
@@ -445,11 +420,11 @@ btnBuscar.addEventListener("click", () => {
   const origen  = selectOrigen.value;
   const destino = selectDestino.value;
 
-  if (!nombre)  { mostrarMensaje("Por favor ingresá tu nombre.", "error"); return; }
-  if (!origen)  { mostrarMensaje("Por favor seleccioná un origen.", "error"); return; }
-  if (!destino) { mostrarMensaje("Por favor seleccioná un destino.", "error"); return; }
-  if (origen === destino) { mostrarMensaje("El origen y el destino no pueden ser iguales.", "error"); return; }
-  if (!fechaSalida) { mostrarMensaje("Por favor seleccioná la fecha de salida.", "error"); return; }
+  if (!nombre)           { mostrarMensaje("Por favor ingresá tu nombre.", "error"); return; }
+  if (!origen)           { mostrarMensaje("Por favor seleccioná un origen.", "error"); return; }
+  if (!destino)          { mostrarMensaje("Por favor seleccioná un destino.", "error"); return; }
+  if (origen === destino){ mostrarMensaje("El origen y el destino no pueden ser iguales.", "error"); return; }
+  if (!fechaSalida)      { mostrarMensaje("Por favor seleccioná la fecha de salida.", "error"); return; }
   if (tipoViaje === "ida-vuelta" && !fechaRegreso) {
     mostrarMensaje("Por favor seleccioná la fecha de regreso.", "error"); return;
   }
@@ -500,20 +475,19 @@ btnBorrarTodo.addEventListener("click", () => {
   }
 });
 
-// ---- INICIO ----
-btnMenos.disabled = true;
-setTipoViaje("ida-vuelta");
-renderizarReservas();
+// ---- Pantalla de inicio ----
 
-// Pantalla de inicio
 const pantallaInicio = document.getElementById("pantalla-inicio");
 const app            = document.getElementById("app");
 
 document.getElementById("btn-iniciar").addEventListener("click", () => {
   pantallaInicio.classList.add("saliendo");
   app.classList.remove("oculto");
-  // Elimina del DOM al terminar la transición
-  pantallaInicio.addEventListener("transitionend", () => {
-    pantallaInicio.remove();
-  }, { once: true });
+  pantallaInicio.addEventListener("transitionend", () => pantallaInicio.remove(), { once: true });
 });
+
+// ---- Inicialización ----
+
+btnMenos.disabled = true;
+setTipoViaje("ida-vuelta");
+renderizarReservas();
