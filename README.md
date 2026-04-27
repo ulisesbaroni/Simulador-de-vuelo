@@ -18,6 +18,7 @@ Entrega final (Simulador de vuelos)/
 │   └── estilos.css
 ├── js/
 │   └── simulador.js
+├── datos.json
 └── index.html
 ```
 
@@ -93,9 +94,11 @@ Pantalla de inicio
 - Confirmaciones nativas con `confirm()`
 
 ### Entrega final
+- Clase `Aeropuerto` con constructor y métodos (`getNombreCompleto`, `esDomestico`)
+- Carga asíncrona de datos desde `datos.json` con `fetch` y `async/await`
+- Generación dinámica de opciones en los selects desde JS
 - Calendario interactivo generado dinámicamente
 - Parámetros con valores por defecto en funciones
 - `e.stopPropagation()` para control de propagación de eventos
 - Transiciones CSS controladas desde JS (`transitionend`)
-- Códigos IATA y aeropuertos reales
 - Pantalla de inicio con animación de salida

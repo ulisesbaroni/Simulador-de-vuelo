@@ -1,43 +1,28 @@
 
-// ---- Datos ----
+// ---- Clase Aeropuerto ----
 
-const rutas = [
-  { origen: "AEP", destino: "COR", aerolinea: "Aerolíneas Argentinas", duracion: "1h 20min" },
-  { origen: "AEP", destino: "MDZ", aerolinea: "Flybondi",              duracion: "1h 45min" },
-  { origen: "AEP", destino: "BRC", aerolinea: "LATAM",                 duracion: "2h 30min" },
-  { origen: "AEP", destino: "ROS", aerolinea: "Aerolíneas Argentinas", duracion: "0h 55min" },
-  { origen: "AEP", destino: "SLA", aerolinea: "JetSmart",              duracion: "2h 10min" },
-  { origen: "EZE", destino: "COR", aerolinea: "JetSmart",              duracion: "1h 30min" },
-  { origen: "EZE", destino: "MDZ", aerolinea: "Aerolíneas Argentinas", duracion: "1h 50min" },
-  { origen: "EZE", destino: "BRC", aerolinea: "Aerolíneas Argentinas", duracion: "2h 40min" },
-  { origen: "EZE", destino: "GRU", aerolinea: "LATAM",                 duracion: "3h 00min" },
-  { origen: "EZE", destino: "SCL", aerolinea: "Sky Airline",           duracion: "2h 10min" },
-  { origen: "EZE", destino: "MIA", aerolinea: "American Airlines",     duracion: "9h 00min" },
-  { origen: "EZE", destino: "MAD", aerolinea: "Iberia",                duracion: "12h 30min" },
-  { origen: "SCL", destino: "MIA", aerolinea: "LATAM",                 duracion: "8h 30min" },
-  { origen: "GRU", destino: "MAD", aerolinea: "Iberia",                duracion: "10h 45min" },
-  { origen: "MIA", destino: "MAD", aerolinea: "Iberia",                duracion: "8h 00min" },
-];
+class Aeropuerto {
+  constructor({ codigo, nombre, pais }) {
+    this.codigo = codigo;
+    this.nombre = nombre;
+    this.pais   = pais;
+  }
 
-const aeropuertos = {
-  EZE: "Buenos Aires — Ezeiza (EZE)",
-  AEP: "Buenos Aires — Aeroparque (AEP)",
-  COR: "Córdoba — Ambrosio Taravella (COR)",
-  MDZ: "Mendoza — El Plumerillo (MDZ)",
-  BRC: "Bariloche — Teniente Candelaria (BRC)",
-  ROS: "Rosario — Islas Malvinas (ROS)",
-  SLA: "Salta — Martín Miguel de Güemes (SLA)",
-  GRU: "São Paulo — Guarulhos (GRU)",
-  SCL: "Santiago de Chile — Arturo Merino (SCL)",
-  MIA: "Miami — Miami Intl. (MIA)",
-  MAD: "Madrid — Adolfo Suárez Barajas (MAD)",
-};
+  // Retorna el nombre completo con código IATA entre paréntesis
+  getNombreCompleto() {
+    return `${this.nombre} (${this.codigo})`;
+  }
 
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
+  // Retorna true si el aeropuerto es de Argentina
+  esDomestico() {
+    return this.pais === "AR";
+  }
+}
 
 // ---- Estado de la aplicación ----
 
+let rutas         = [];
+let aeropuertos   = [];
 let tipoViaje     = "ida-vuelta";
 let cantPasajeros = 1;
 let fechaSalida   = null;
@@ -46,6 +31,9 @@ let calModoActivo = null;
 let calBase       = new Date(); calBase.setDate(1);
 let vueloActual   = null;
 let timerMensaje  = null;
+
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
 
 // ---- Referencias al DOM ----
 
@@ -93,6 +81,82 @@ function mismodia(a, b) {
 
 function estaEnRango(date, desde, hasta) {
   return desde && hasta && date > desde && date < hasta;
+}
+
+// ---- Carga de datos (fetch asíncrono) ----
+
+async function cargarDatos() {
+  const res  = await fetch("datos.json");
+  const data = await res.json();
+
+  // Instanciar cada aeropuerto como objeto de la clase Aeropuerto
+  aeropuertos = data.aeropuertos.map(a => new Aeropuerto(a));
+  rutas       = data.rutas;
+
+  poblarSelects();
+}
+
+// Rellena los selects de origen y destino con los aeropuertos cargados
+function poblarSelects() {
+  const domesticos       = aeropuertos.filter(a => a.esDomestico());
+  const internacionales  = aeropuertos.filter(a => !a.esDomestico());
+
+  [selectOrigen, selectDestino].forEach(select => {
+    const defaultOption = select.querySelector("option");
+
+    select.innerHTML = "";
+    select.appendChild(defaultOption);
+
+    const grupoDom = document.createElement("optgroup");
+    grupoDom.label = "🇦🇷 Argentina";
+    domesticos.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value       = a.codigo;
+      opt.textContent = a.getNombreCompleto();
+      grupoDom.appendChild(opt);
+    });
+
+    const grupoInt = document.createElement("optgroup");
+    grupoInt.label = "🌎 Internacional";
+    internacionales.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value       = a.codigo;
+      opt.textContent = a.getNombreCompleto();
+      grupoInt.appendChild(opt);
+    });
+
+    select.appendChild(grupoDom);
+    select.appendChild(grupoInt);
+  });
+}
+
+// ---- Vuelos ----
+
+function buscarRuta(origen, destino) {
+  return rutas.find(
+    r => (r.origen === origen && r.destino === destino) ||
+         (r.origen === destino && r.destino === origen)
+  ) || null;
+}
+
+function getNombreAeropuerto(codigo) {
+  const aeropuerto = aeropuertos.find(a => a.codigo === codigo);
+  return aeropuerto ? aeropuerto.getNombreCompleto() : codigo;
+}
+
+function mostrarResultadoVuelo(ruta, nombre, salida, regreso) {
+  let html = `
+    <p>Pasajero:   <span>${nombre}</span></p>
+    <p>Origen:     <span>${getNombreAeropuerto(ruta.origen)}</span></p>
+    <p>Destino:    <span>${getNombreAeropuerto(ruta.destino)}</span></p>
+    <p>Aerolínea:  <span>${ruta.aerolinea}</span></p>
+    <p>Duración:   <span>${ruta.duracion}</span></p>
+    <p>Salida:     <span>${salida}</span></p>
+  `;
+  if (regreso) html += `<p>Regreso:    <span>${regreso}</span></p>`;
+  html += `<p>Pasajeros:  <span>${cantPasajeros}</span></p>`;
+  divInfoVuelo.innerHTML = html;
+  divResultado.classList.remove("oculto");
 }
 
 // ---- Calendario ----
@@ -151,7 +215,7 @@ function buildGrid(mes) {
     fecha.setHours(0,0,0,0);
 
     const cell = document.createElement("button");
-    cell.className = "cal-dia";
+    cell.className  = "cal-dia";
     cell.textContent = dia;
 
     if (fecha < hoy) {
@@ -182,7 +246,7 @@ function elegirDia(fecha) {
 
   } else if (calModoActivo === "regreso") {
     if (fecha <= fechaSalida) {
-      fechaSalida = fecha;
+      fechaSalida  = fecha;
       fechaRegreso = null;
     } else {
       fechaRegreso = fecha;
@@ -245,32 +309,8 @@ function setTipoViaje(tipo) {
 function actualizarPasajeros(delta) {
   cantPasajeros = Math.min(9, Math.max(1, cantPasajeros + delta));
   cantEl.textContent = cantPasajeros;
-  btnMenos.disabled = cantPasajeros === 1;
-  btnMas.disabled   = cantPasajeros === 9;
-}
-
-// ---- Vuelos ----
-
-function buscarRuta(origen, destino) {
-  return rutas.find(
-    r => (r.origen === origen && r.destino === destino) ||
-         (r.origen === destino && r.destino === origen)
-  ) || null;
-}
-
-function mostrarResultadoVuelo(ruta, nombre, salida, regreso) {
-  let html = `
-    <p>Pasajero:   <span>${nombre}</span></p>
-    <p>Origen:     <span>${aeropuertos[ruta.origenCod]}</span></p>
-    <p>Destino:    <span>${aeropuertos[ruta.destinoCod]}</span></p>
-    <p>Aerolínea:  <span>${ruta.aerolinea}</span></p>
-    <p>Duración:   <span>${ruta.duracion}</span></p>
-    <p>Salida:     <span>${salida}</span></p>
-  `;
-  if (regreso) html += `<p>Regreso:    <span>${regreso}</span></p>`;
-  html += `<p>Pasajeros:  <span>${cantPasajeros}</span></p>`;
-  divInfoVuelo.innerHTML = html;
-  divResultado.classList.remove("oculto");
+  btnMenos.disabled  = cantPasajeros === 1;
+  btnMas.disabled    = cantPasajeros === 9;
 }
 
 // ---- Mensajes ----
@@ -278,13 +318,13 @@ function mostrarResultadoVuelo(ruta, nombre, salida, regreso) {
 function mostrarMensaje(texto, tipo) {
   if (timerMensaje) clearTimeout(timerMensaje);
   divMensaje.textContent = texto;
-  divMensaje.className = "mensaje " + tipo;
+  divMensaje.className   = "mensaje " + tipo;
   if (tipo === "exito") timerMensaje = setTimeout(ocultarMensaje, 4000);
 }
 
 function ocultarMensaje() {
   if (timerMensaje) { clearTimeout(timerMensaje); timerMensaje = null; }
-  divMensaje.className = "mensaje oculto";
+  divMensaje.className   = "mensaje oculto";
   divMensaje.textContent = "";
 }
 
@@ -420,11 +460,11 @@ btnBuscar.addEventListener("click", () => {
   const origen  = selectOrigen.value;
   const destino = selectDestino.value;
 
-  if (!nombre)           { mostrarMensaje("Por favor ingresá tu nombre.", "error"); return; }
-  if (!origen)           { mostrarMensaje("Por favor seleccioná un origen.", "error"); return; }
-  if (!destino)          { mostrarMensaje("Por favor seleccioná un destino.", "error"); return; }
-  if (origen === destino){ mostrarMensaje("El origen y el destino no pueden ser iguales.", "error"); return; }
-  if (!fechaSalida)      { mostrarMensaje("Por favor seleccioná la fecha de salida.", "error"); return; }
+  if (!nombre)            { mostrarMensaje("Por favor ingresá tu nombre.", "error"); return; }
+  if (!origen)            { mostrarMensaje("Por favor seleccioná un origen.", "error"); return; }
+  if (!destino)           { mostrarMensaje("Por favor seleccioná un destino.", "error"); return; }
+  if (origen === destino) { mostrarMensaje("El origen y el destino no pueden ser iguales.", "error"); return; }
+  if (!fechaSalida)       { mostrarMensaje("Por favor seleccioná la fecha de salida.", "error"); return; }
   if (tipoViaje === "ida-vuelta" && !fechaRegreso) {
     mostrarMensaje("Por favor seleccioná la fecha de regreso.", "error"); return;
   }
@@ -449,12 +489,7 @@ btnBuscar.addEventListener("click", () => {
   };
 
   ocultarMensaje();
-  mostrarResultadoVuelo(
-    { ...ruta, origenCod: origen, destinoCod: destino },
-    nombre,
-    formatFecha(fechaSalida),
-    fechaRegreso ? formatFecha(fechaRegreso) : null
-  );
+  mostrarResultadoVuelo(ruta, nombre, formatFecha(fechaSalida), fechaRegreso ? formatFecha(fechaRegreso) : null);
 });
 
 btnReservar.addEventListener("click", () => {
@@ -491,3 +526,4 @@ document.getElementById("btn-iniciar").addEventListener("click", () => {
 btnMenos.disabled = true;
 setTipoViaje("ida-vuelta");
 renderizarReservas();
+cargarDatos(); // carga aeropuertos y rutas desde datos.json de forma asíncrona

@@ -1,0 +1,32 @@
+{
+  "aeropuertos": [
+    { "codigo": "EZE", "nombre": "Buenos Aires — Ezeiza",                  "pais": "AR" },
+    { "codigo": "AEP", "nombre": "Buenos Aires — Aeroparque",              "pais": "AR" },
+    { "codigo": "COR", "nombre": "Córdoba — Ambrosio Taravella",           "pais": "AR" },
+    { "codigo": "MDZ", "nombre": "Mendoza — El Plumerillo",                "pais": "AR" },
+    { "codigo": "BRC", "nombre": "Bariloche — Teniente Candelaria",        "pais": "AR" },
+    { "codigo": "ROS", "nombre": "Rosario — Islas Malvinas",               "pais": "AR" },
+    { "codigo": "SLA", "nombre": "Salta — Martín Miguel de Güemes",        "pais": "AR" },
+    { "codigo": "GRU", "nombre": "São Paulo — Guarulhos",                  "pais": "BR" },
+    { "codigo": "SCL", "nombre": "Santiago de Chile — Arturo Merino",      "pais": "CL" },
+    { "codigo": "MIA", "nombre": "Miami — Miami Intl.",                    "pais": "US" },
+    { "codigo": "MAD", "nombre": "Madrid — Adolfo Suárez Barajas",         "pais": "ES" }
+  ],
+  "rutas": [
+    { "origen": "AEP", "destino": "COR", "aerolinea": "Aerolíneas Argentinas", "duracion": "1h 20min" },
+    { "origen": "AEP", "destino": "MDZ", "aerolinea": "Flybondi",              "duracion": "1h 45min" },
+    { "origen": "AEP", "destino": "BRC", "aerolinea": "LATAM",                 "duracion": "2h 30min" },
+    { "origen": "AEP", "destino": "ROS", "aerolinea": "Aerolíneas Argentinas", "duracion": "0h 55min" },
+    { "origen": "AEP", "destino": "SLA", "aerolinea": "JetSmart",              "duracion": "2h 10min" },
+    { "origen": "EZE", "destino": "COR", "aerolinea": "JetSmart",              "duracion": "1h 30min" },
+    { "origen": "EZE", "destino": "MDZ", "aerolinea": "Aerolíneas Argentinas", "duracion": "1h 50min" },
+    { "origen": "EZE", "destino": "BRC", "aerolinea": "Aerolíneas Argentinas", "duracion": "2h 40min" },
+    { "origen": "EZE", "destino": "GRU", "aerolinea": "LATAM",                 "duracion": "3h 00min" },
+    { "origen": "EZE", "destino": "SCL", "aerolinea": "Sky Airline",           "duracion": "2h 10min" },
+    { "origen": "EZE", "destino": "MIA", "aerolinea": "American Airlines",     "duracion": "9h 00min" },
+    { "origen": "EZE", "destino": "MAD", "aerolinea": "Iberia",                "duracion": "12h 30min" },
+    { "origen": "SCL", "destino": "MIA", "aerolinea": "LATAM",                 "duracion": "8h 30min" },
+    { "origen": "GRU", "destino": "MAD", "aerolinea": "Iberia",                "duracion": "10h 45min" },
+    { "origen": "MIA", "destino": "MAD", "aerolinea": "Iberia",                "duracion": "8h 00min" }
+  ]
+}
